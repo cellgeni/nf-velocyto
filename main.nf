@@ -8,9 +8,8 @@ def helpMessage() {
     velocyto pipeline
     =================
     This pipeline runs Velocyto. 
-    The only parameters you need to input are:
+    The only parameter you need to input is:
       --SAMPLEFILE /full/path/to/sample/file
-      --sampleID user99
     This file should be a tsv with 3 columns: SAMPLEID\t/PATH/TO/BAM/t/PATH/TO/BARCODES
     Each line should only contain information on a single sample.
     An example can be seen here: https://github.com/cellgeni/velocyto/blob/master/example-data/example.txt
@@ -33,30 +32,6 @@ def errorMessage() {
     The pipeline has exited with error status 1.
     """.stripIndent()
     exit 1
-}
-
-process email_startup {
-  
-  shell:
-  '''
-  contents=`cat !{params.SAMPLEFILE}`
-  sendmail "!{params.sangerID}@sanger.ac.uk" <<EOF
-  Subject: Launched pipeline
-  From: noreply-cellgeni-pipeline@sanger.ac.uk
-
-  Hi there, you've launched Cellular Genetics Informatics' Velocyto pipeline.
-  Your parameters are:
-  Samplefile: !{params.SAMPLEFILE}
-  The Genome GTF file used is: !{params.GTF}
-  The Mask file used is: !{params.RMSK}
-  
-  Your sample file looks like:
-  $contents
-
-  Thanks,
-  Cellular Genetics Informatics
-  EOF
-  '''
 }
 
 process get_data {
@@ -103,7 +78,7 @@ process get_data {
 process run_velocyto {
 
   //output velocyto files to results directory
-  publishDir "/lustre/scratch127/cellgen/cellgeni/tickets/nextflow-tower-results/${params.sangerID}/${params.timestamp}/velocyto-results", mode: 'copy'
+  publishDir "${params.outdir}", mode: 'copy'
 
   input:
   val(NAME) 
@@ -139,43 +114,6 @@ process run_velocyto {
   '''
 }
 
-process email_finish {
-  
-  input:
-  val(NAME) 
-  
-  shell:
-  '''
-  sendmail "!{params.sangerID}@sanger.ac.uk" <<EOF
-  Subject: Finished pipeline
-  From: noreply-cellgeni-pipeline@sanger.ac.uk
-
-  Hi there, your run of Cellular Genetics Informatics' Velocyto pipeline is complete.
-  
-  Results are available here: "/lustre/scratch127/cellgen/cellgeni/tickets/nextflow-tower-results/!{params.sangerID}/!{params.timestamp}/velocyto-results"
-  
-  The results will be deleted in a week so please copy your data to a sensible location, i.e.:
-  cp -r "/lustre/scratch127/cellgen/cellgeni/tickets/nextflow-tower-results/!{params.sangerID}/!{params.timestamp}/velocyto-results" /path/to/sensible/location
-  
-  The general velocyto command run was:
-  velocyto run \
-    -t uint32 \
-    --samtools-threads !{params.THREADS} \
-    --samtools-memory !{params.MEM} \
-    -b "sample-barcodes" \
-    -o "sample-velocyto" \
-    -m !{params.RMSK} \
-    "sample-bam" \
-    !{params.GTF}
-  
-  Each sample has the command run documented inside: "sampleID/cmd.txt"
-
-  Thanks,
-  Cellular Genetics Informatics
-  EOF
-  '''
-}
-
 workflow {
   if (params.HELP) {
     helpMessage()
@@ -184,15 +122,7 @@ workflow {
   else {
     //Puts samplefile into a channel unless it is null, if it is null then it displays error message and exits with status 1.
     ch_sample_list = params.SAMPLEFILE != null ? Channel.fromPath(params.SAMPLEFILE) : errorMessage()
-    if (params.sangerID == null) {
-      errorMessage()
-    }
-    else {
-      email_startup()
-      ch_sample_list | flatMap{ it.readLines() } | get_data 
-      run_velocyto(get_data.out.name, get_data.out.barcodes, get_data.out.bam, get_data.out.index) \
-      | collect \
-      | email_finish
-    }
+    ch_sample_list | flatMap{ it.readLines() } | get_data 
+    run_velocyto(get_data.out.name, get_data.out.barcodes, get_data.out.bam, get_data.out.index) 
   }
 }
