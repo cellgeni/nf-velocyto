@@ -1,5 +1,5 @@
 # nextflow-velocyto
-Our velocyto repo but implemented in Nextflow
+Our [Velocyto repo](https://github.com/cellgeni/velocyto) but implemented in Nextflow
 
 There are two branches:
 
