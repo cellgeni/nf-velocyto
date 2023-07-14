@@ -37,37 +37,33 @@ def errorMessage() {
 process get_data {
 
   input:
-  val(sample) 
+  tuple val(id), val(bam_path), val(barcodes_path)
 
   output:
-  env(NAME), emit: name 
+  val(id), emit: id 
   path('*barcodes.tsv'), emit: barcodes  
   path('*bam'), emit: bam 
   path('*bam.bai'), emit: index 
 
   shell:
   '''
-  NAME=`echo !{sample} | cut -f 1 -d " "`
-  bam_path=`echo !{sample} | cut -f 2 -d " "`
-  barcodes_path=`echo !{sample} | cut -f 3 -d " "`
-  
   if [[ "!{params.bam_on_irods}" == "no" ]]; then
-    cp "${bam_path}" "${NAME}.bam"
-    cp "${bam_path}.bai" "${NAME}.bam.bai"
+    cp "!{bam_path}" "!{id}.bam"
+    cp "!{bam_path}.bai" "!{id}.bam.bai"
   elif [[ "!{params.bam_on_irods}" == "yes" ]]; then
-    iget -f -v -K "${bam_path}" "${NAME}.bam"
-    iget -f -v -K "${bam_path}.bai" "${NAME}.bam.bai"
+    iget -f -v -K "!{bam_path}" "!{id}.bam"
+    iget -f -v -K "!{bam_path}.bai" "!{id}.bam.bai"
   else
     echo "incorrect bam option"
     exit 1
   fi
 
   if [[ "!{params.barcodes_on_irods}" == "no" ]]; then
-    cp "${barcodes_path}" "${NAME}.barcodes.tsv.gz"
-    gunzip -f "${NAME}.barcodes.tsv.gz"
+    cp "!{barcodes_path}" "!{id}.barcodes.tsv.gz"
+    gunzip -f "!{id}.barcodes.tsv.gz"
   elif [[ "!{params.barcodes_on_irods}" == "yes" ]]; then
-    iget -f -v -K "${barcodes_path}" "${NAME}.barcodes.tsv.gz"
-    gunzip -f "${NAME}.barcodes.tsv.gz"
+    iget -f -v -K "!{barcodes_path}" "!{id}.barcodes.tsv.gz"
+    gunzip -f "!{id}.barcodes.tsv.gz"
   else
     echo "incorrect barcodes option"
     exit 1
@@ -122,7 +118,7 @@ workflow {
   else {
     //Puts samplefile into a channel unless it is null, if it is null then it displays error message and exits with status 1.
     ch_sample_list = params.SAMPLEFILE != null ? Channel.fromPath(params.SAMPLEFILE) : errorMessage()
-    ch_sample_list | flatMap{ it.readLines() } | get_data 
-    run_velocyto(get_data.out.name, get_data.out.barcodes, get_data.out.bam, get_data.out.index) 
+    ch_sample_list | flatMap{ it.readLines() } | map { it -> [ it.split()[0], it.split()[1], it.split()[2] ] } | get_data 
+    run_velocyto(get_data.out.id, get_data.out.barcodes, get_data.out.bam, get_data.out.index) 
   }
 }
