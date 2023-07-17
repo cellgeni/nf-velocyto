@@ -3,9 +3,9 @@ Our [Velocyto repo](https://github.com/cellgeni/velocyto) but implemented in Nex
 
 There are two branches:
 
-`main` - this branch contains the script for running STARsolo on the FARM using Nextflow command line
+`main` - this branch contains the script for running velocyto on the FARM using Nextflow command line
 
-`nextflow-tower` - this branch conrains the script for running STARsolo on the FARM using Nextflow Tower
+`nextflow-tower` - this branch conrains the script for running velocyto on the FARM using Nextflow Tower
 
 ## Contents of Repo:
 * `main.nf` - the Nextflow pipeline that executes velocyto
@@ -20,5 +20,5 @@ There are two branches:
 * `--barcodes_on_irods` - Tells pipeline whether to look for the gzipped barcodes file on IRODS or the FARM (default yes means look on IRODS).
 * `--bam_on_irods` - Tells pipeline whether to look for the bam file on IRODS or the FARM (default yes means look on IRODS).
 * `--bam_has_umis` - Tells the pipeline whether the BAM files have UMIs (default yes means BAM contains UMIs).
-* `--GTF` - Tells pipeline which genome GTF to use (by default GRCh38 2020A is used). This argument is hardcoded and needs to be changed to your local path to the GTF file.
-* `--RMSK` - Tells pipeline which mask file to use (by default GRCh38 is used). This argument is hardcoded and needs to be changed to your local path to the mask file.
+* `--GTF` - Tells pipeline which genome GTF to use (by default GRCh38 2020A is used). This default argument is hardcoded and needs to be changed to your local path to the file.
+* `--RMSK` - Tells pipeline which mask file to use (by default GRCh38 is used). This default argument is hardcoded and needs to be changed to your local path to the file.
